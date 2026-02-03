@@ -19,7 +19,11 @@ kotlin {
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        browser()
+        browser {
+            commonWebpackConfig {
+                outputFileName = "composeApp.js"
+            }
+        }
         binaries.executable()
     }
 
@@ -49,9 +53,13 @@ kotlin {
         }
         jsMain.dependencies {
             implementation(libs.ktor.client.js)
+            implementation(npm("@js-joda/core", "5.6.1"))
+            implementation(npm("@js-joda/timezone", "2.18.2"))
         }
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)
+            implementation(npm("@js-joda/core", "5.6.1"))
+            implementation(npm("@js-joda/timezone", "2.18.2"))
         }
     }
 }

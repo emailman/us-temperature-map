@@ -3,6 +3,7 @@ package edu.emailman.us_temperatures
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
 import edu.emailman.us_temperatures.viewmodel.TemperatureViewModel
+import kotlinx.browser.document
 import kotlinx.browser.window
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -13,7 +14,7 @@ fun main() {
 
     val viewModel = TemperatureViewModel(apiKey)
 
-    ComposeViewport {
+    ComposeViewport(document.body!!) {
         App(viewModel)
     }
 }

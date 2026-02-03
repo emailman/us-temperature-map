@@ -2,6 +2,7 @@ package edu.emailman.us_temperatures.ui.components
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import kotlin.math.max
@@ -55,7 +56,7 @@ fun DrawScope.drawHeatMapCell(
         val textStyle = TextStyle(
             fontSize = 24.sp,
             fontWeight = FontWeight.ExtraBold,
-            color = color
+            color = Color.White
         )
         val textResult = textMeasurer.measure(tempText, textStyle)
 

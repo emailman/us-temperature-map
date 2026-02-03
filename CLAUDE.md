@@ -68,7 +68,7 @@ composeApp/src/commonMain/kotlin/edu/emailman/us_temperatures/
 
 ### Rendering Layer Order (bottom to top)
 1. Light gray background (#D3D3D3)
-2. Temperature readings (colored text with circles)
+2. Temperature readings (white text with color-coded circles)
 3. State borders (thin gray, 0.5px)
 4. National border (thick dark green, 2px)
 5. Grid overlay (dashed lines with labels)

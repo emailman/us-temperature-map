@@ -8,7 +8,7 @@ A Kotlin Multiplatform application that displays real-time temperatures across t
 
 - **Real-time temperature data** from OpenWeatherMap API
 - **Precise state boundaries** rendered from GeoJSON data (48 continental states)
-- **Color-coded temperatures** with gradient from blue (cold) to red (hot)
+- **Color-coded temperatures** with white text and colored circles (blue for cold, red for hot)
 - **5° x 5° grid overlay** with latitude/longitude labels
 - **Progressive loading** with progress indicator
 - **Cross-platform** - runs on Desktop (JVM) and Web (Wasm/JS)
