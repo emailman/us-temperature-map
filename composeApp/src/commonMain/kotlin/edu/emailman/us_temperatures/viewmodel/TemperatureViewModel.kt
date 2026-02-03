@@ -3,7 +3,10 @@ package edu.emailman.us_temperatures.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import edu.emailman.us_temperatures.data.api.OpenWeatherMapApi
-import edu.emailman.us_temperatures.data.repository.WeatherRepository
+import edu.emailman.us_temperatures.data.geo.USCitiesData
+import edu.emailman.us_temperatures.data.model.City
+import edu.emailman.us_temperatures.data.model.TemperatureData
+import edu.emailman.us_temperatures.data.repository.CityWeatherRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,15 +24,19 @@ sealed class LoadingState {
 
 class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
     private var api: OpenWeatherMapApi? = null
-    private var repository: WeatherRepository? = null
+    private var repository: CityWeatherRepository? = null
+    private var cities: List<City> = emptyList()
 
     private val _apiKey = MutableStateFlow(initialApiKey?.takeIf { it.isNotBlank() })
     val apiKey: StateFlow<String?> = _apiKey.asStateFlow()
 
     val hasApiKey: Boolean get() = _apiKey.value != null
 
-    private val _temperatures = MutableStateFlow<Map<Pair<Double, Double>, Double>>(emptyMap())
-    val temperatures: StateFlow<Map<Pair<Double, Double>, Double>> = _temperatures.asStateFlow()
+    private val _cityTemperatures = MutableStateFlow<List<TemperatureData>>(emptyList())
+    val cityTemperatures: StateFlow<List<TemperatureData>> = _cityTemperatures.asStateFlow()
+
+    private val _selectedCity = MutableStateFlow<TemperatureData?>(null)
+    val selectedCity: StateFlow<TemperatureData?> = _selectedCity.asStateFlow()
 
     private val _loadingState = MutableStateFlow<LoadingState>(
         if (initialApiKey.isNullOrBlank()) LoadingState.NoApiKey else LoadingState.Idle
@@ -42,13 +49,19 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
     private val _showGrid = MutableStateFlow(true)
     val showGrid: StateFlow<Boolean> = _showGrid.asStateFlow()
 
-    val totalGridPoints: Int = WeatherRepository.generateGridPoints().size
+    private val _totalCities = MutableStateFlow(0)
+    val totalCities: StateFlow<Int> = _totalCities.asStateFlow()
 
     init {
-        if (!initialApiKey.isNullOrBlank()) {
-            api = OpenWeatherMapApi(initialApiKey)
-            repository = WeatherRepository(api!!)
-            refreshTemperatures()
+        viewModelScope.launch {
+            cities = USCitiesData.loadCities()
+            _totalCities.value = cities.size
+
+            if (!initialApiKey.isNullOrBlank()) {
+                api = OpenWeatherMapApi(initialApiKey)
+                repository = CityWeatherRepository(api!!)
+                refreshTemperatures()
+            }
         }
     }
 
@@ -60,7 +73,7 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
 
         _apiKey.value = newApiKey
         api = OpenWeatherMapApi(newApiKey)
-        repository = WeatherRepository(api!!)
+        repository = CityWeatherRepository(api!!)
         refreshTemperatures()
     }
 
@@ -70,24 +83,30 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
             return
         }
 
+        if (cities.isEmpty()) {
+            _loadingState.value = LoadingState.Error("Cities not loaded")
+            return
+        }
+
         viewModelScope.launch {
-            _temperatures.value = emptyMap()
-            _loadingState.value = LoadingState.Loading(0f, 0, totalGridPoints)
+            _cityTemperatures.value = emptyList()
+            _selectedCity.value = null
+            _loadingState.value = LoadingState.Loading(0f, 0, cities.size)
 
             var loaded = 0
 
             try {
-                repo.fetchTemperaturesProgressively().collect { tempData ->
+                repo.fetchCityTemperaturesProgressively(cities).collect { tempData ->
                     loaded++
                     if (!tempData.temperature.isNaN()) {
-                        _temperatures.update { current ->
-                            current + (Pair(tempData.latitude, tempData.longitude) to tempData.temperature)
+                        _cityTemperatures.update { current ->
+                            current + tempData
                         }
                     }
                     _loadingState.value = LoadingState.Loading(
-                        progress = loaded.toFloat() / totalGridPoints,
+                        progress = loaded.toFloat() / cities.size,
                         loaded = loaded,
-                        total = totalGridPoints
+                        total = cities.size
                     )
                 }
 
@@ -97,6 +116,10 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
                 _loadingState.value = LoadingState.Error(e.message ?: "Unknown error")
             }
         }
+    }
+
+    fun selectCity(city: TemperatureData?) {
+        _selectedCity.value = city
     }
 
     fun toggleGrid() {

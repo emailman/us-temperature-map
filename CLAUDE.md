@@ -120,3 +120,103 @@ composeApp/src/commonMain/kotlin/edu/emailman/us_temperatures/
 - kotlinx-serialization 1.8.0 - JSON parsing
 - kotlinx-datetime 0.6.1 - Date/time handling
 - Compose Multiplatform - UI framework
+
+---
+
+## Planned: City-Based Temperature Display
+
+### Overview
+Change from displaying temperatures at grid centers (5° intervals, ~60 points) to displaying temperatures for 50-100 specific US cities loaded from a JSON file, with interactive tooltips showing city details on hover/click.
+
+### Requirements
+- Load city list from JSON resource file (50-100 cities)
+- Display temperature inside colored circles (current visual style)
+- Interactive: hover/click shows popup with city name, temperature, and weather conditions
+
+### Implementation Steps
+
+#### Phase 1: Data Layer
+
+**1.1 Add Weather class to WeatherResponse**
+- File: `data/api/WeatherResponse.kt`
+- Add `Weather` data class with `main` (condition) and `description` fields
+- Add `weather: List<Weather>` to `WeatherResponse`
+
+**1.2 Create City data model**
+- New file: `data/model/City.kt`
+- Fields: `name`, `state`, `latitude`, `longitude`
+
+**1.3 Expand TemperatureData model**
+- File: `data/model/TemperatureData.kt`
+- Add: `cityName`, `stateName`, `weatherCondition`, `weatherDescription`
+
+**1.4 Create cities JSON file**
+- New file: `composeResources/files/us-cities.json`
+- Include 50-100 major US cities
+
+**1.5 Create city data loader**
+- New file: `data/geo/USCitiesData.kt`
+- Follow `USStatesGeoData.kt` pattern
+
+#### Phase 2: Repository Layer
+
+**2.1 Create CityWeatherRepository**
+- New file: `data/repository/CityWeatherRepository.kt`
+- Accept `List<City>` instead of generating grid points
+- Include weather conditions in emitted `TemperatureData`
+
+#### Phase 3: ViewModel Changes
+
+**3.1 Update TemperatureViewModel**
+- File: `viewmodel/TemperatureViewModel.kt`
+- Change from `Map<Pair<Double, Double>, Double>` to `List<TemperatureData>`
+- Load cities on init via `USCitiesData.loadCities()`
+- Add `selectedCity` state for hover/click
+
+#### Phase 4: UI Layer
+
+**4.1 Create CityDisplayData for hit testing**
+- New file: `ui/model/CityDisplayData.kt`
+- Store screen coordinates and radius for hit testing
+
+**4.2 Update HeatMapRenderer**
+- File: `ui/components/HeatMapRenderer.kt`
+- Add `drawCityMarkers()` - draw at exact coordinates (no grid cell math)
+- Return `List<CityDisplayData>` for hit testing
+
+**4.3 Create CityTooltip component**
+- New file: `ui/components/CityTooltip.kt`
+- Card showing: city name + state, temperature, weather condition
+
+**4.4 Update USMapCanvas for interactivity**
+- File: `ui/components/USMapCanvas.kt`
+- Change signature to accept `List<TemperatureData>`, `selectedCity`, `onCitySelected`
+- Add pointer input for tap/hover detection
+- Render tooltip overlay
+
+**4.5 Update MainScreen**
+- File: `ui/MainScreen.kt`
+- Collect `cityTemperatures` and `selectedCity` from ViewModel
+
+### Files Summary
+
+**New Files (6):**
+- `data/model/City.kt`
+- `data/geo/USCitiesData.kt`
+- `data/repository/CityWeatherRepository.kt`
+- `ui/model/CityDisplayData.kt`
+- `ui/components/CityTooltip.kt`
+- `composeResources/files/us-cities.json`
+
+**Modified Files (6):**
+- `data/api/WeatherResponse.kt`
+- `data/model/TemperatureData.kt`
+- `viewmodel/TemperatureViewModel.kt`
+- `ui/components/HeatMapRenderer.kt`
+- `ui/components/USMapCanvas.kt`
+- `ui/MainScreen.kt`
+
+### Verification
+1. Build check: `./gradlew.bat :composeApp:compileKotlinJvm`
+2. Desktop test: `./gradlew.bat :composeApp:run`
+3. Web test: `./gradlew.bat :composeApp:wasmJsBrowserDevelopmentRun`

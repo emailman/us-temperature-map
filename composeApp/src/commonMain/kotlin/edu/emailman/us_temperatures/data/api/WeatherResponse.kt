@@ -7,7 +7,14 @@ import kotlinx.serialization.Serializable
 data class WeatherResponse(
     val coord: Coord,
     val main: Main,
-    val name: String
+    val name: String,
+    val weather: List<Weather> = emptyList()
+)
+
+@Serializable
+data class Weather(
+    val main: String,
+    val description: String
 )
 
 @Serializable

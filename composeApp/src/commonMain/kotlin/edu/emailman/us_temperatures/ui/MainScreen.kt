@@ -14,11 +14,13 @@ import edu.emailman.us_temperatures.viewmodel.TemperatureViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(viewModel: TemperatureViewModel) {
-    val temperatures by viewModel.temperatures.collectAsState()
+    val cityTemperatures by viewModel.cityTemperatures.collectAsState()
+    val selectedCity by viewModel.selectedCity.collectAsState()
     val loadingState by viewModel.loadingState.collectAsState()
     val lastUpdated by viewModel.lastUpdated.collectAsState()
     val showGrid by viewModel.showGrid.collectAsState()
     val hasApiKey by viewModel.apiKey.collectAsState()
+    val totalCities by viewModel.totalCities.collectAsState()
 
     Scaffold(
         topBar = {
@@ -103,7 +105,9 @@ fun MainScreen(viewModel: TemperatureViewModel) {
             ) {
                 // Map canvas
                 USMapCanvas(
-                    temperatures = temperatures,
+                    cityTemperatures = cityTemperatures,
+                    selectedCity = selectedCity,
+                    onCitySelected = { viewModel.selectCity(it) },
                     showGrid = showGrid,
                     modifier = Modifier.weight(1f)
                 )
