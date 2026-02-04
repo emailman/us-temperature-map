@@ -118,8 +118,18 @@ fun USMapCanvas(
                     it.temperatureData.longitude == city.longitude
                 }
                 displayData?.let { data ->
-                    val tooltipOffsetX = with(density) { (data.screenX + data.radius + 8).toInt() }
-                    val tooltipOffsetY = with(density) { (data.screenY - 40).toInt() }
+                    val isLowLatitude = city.latitude < 30.0
+                    val isEastCoast = city.longitude > -75.0
+                    val tooltipOffsetX = when {
+                        isLowLatitude -> with(density) { (data.screenX - 60).toInt() }  // Center above marker
+                        isEastCoast -> with(density) { (data.screenX - 160).toInt() }  // Left of marker
+                        else -> with(density) { (data.screenX + data.radius + 8).toInt() }  // Right of marker
+                    }
+                    val tooltipOffsetY = if (isLowLatitude) {
+                        with(density) { (data.screenY - 180).toInt() }  // Above marker
+                    } else {
+                        with(density) { (data.screenY - 40).toInt() }  // Current position
+                    }
 
                     CityTooltip(
                         city = city,

@@ -8,7 +8,14 @@ data class WeatherResponse(
     val coord: Coord,
     val main: Main,
     val name: String,
-    val weather: List<Weather> = emptyList()
+    val weather: List<Weather> = emptyList(),
+    val wind: Wind? = null
+)
+
+@Serializable
+data class Wind(
+    val speed: Double,
+    val deg: Int = 0
 )
 
 @Serializable

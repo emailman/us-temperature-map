@@ -9,6 +9,12 @@ import androidx.compose.ui.unit.dp
 import edu.emailman.us_temperatures.data.model.TemperatureData
 import kotlin.math.roundToInt
 
+private fun degreesToCardinal(degrees: Int): String {
+    val directions = listOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
+    val index = ((degrees + 22.5) / 45).toInt() % 8
+    return directions[index]
+}
+
 @Composable
 fun CityTooltip(
     city: TemperatureData,
@@ -38,20 +44,37 @@ fun CityTooltip(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            if (city.weatherCondition.isNotEmpty()) {
+            if (city.weatherDescription.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = city.weatherCondition,
+                    text = city.weatherDescription.replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.bodyMedium
                 )
-                if (city.weatherDescription.isNotEmpty() && city.weatherDescription != city.weatherCondition) {
-                    Text(
-                        text = city.weatherDescription.replaceFirstChar { it.uppercase() },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "High: ${city.tempMax.roundToInt()}° / Low: ${city.tempMin.roundToInt()}°",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Text(
+                text = "Humidity: ${city.humidity}%",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            val windText = if (city.windSpeed.roundToInt() > 0) {
+                "Wind: ${city.windSpeed.roundToInt()} mph ${degreesToCardinal(city.windDirection)}"
+            } else {
+                "Wind: 0 mph"
+            }
+            Text(
+                text = windText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

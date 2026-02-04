@@ -1,15 +1,17 @@
 # US Temperature Map
 
-A Kotlin Multiplatform application that displays real-time temperatures across the continental United States on an interactive map with state boundaries.
+A Kotlin Multiplatform application that displays real-time temperatures for major US cities on an interactive map with state boundaries.
 
 ![US Temperature Map Screenshot](screenshot.png)
 
 ## Features
 
-- **Real-time temperature data** from OpenWeatherMap API
+- **Real-time temperature data** from OpenWeatherMap API for 100 major US cities
+- **Interactive city markers** - click/tap to see detailed weather information
+- **City tooltips** showing temperature, weather conditions, high/low, humidity, and wind speed with direction
 - **Precise state boundaries** rendered from GeoJSON data (48 continental states)
 - **Color-coded temperatures** with white text and colored circles (blue for cold, red for hot)
-- **5° x 5° grid overlay** with latitude/longitude labels
+- **5° x 5° grid overlay** with latitude/longitude labels (toggleable)
 - **Progressive loading** with progress indicator
 - **Cross-platform** - runs on Desktop (JVM) and Web (Wasm/JS)
 
@@ -61,9 +63,9 @@ composeApp/src/commonMain/kotlin/edu/emailman/us_temperatures/
 ├── App.kt                          # Main app entry point
 ├── data/
 │   ├── api/                        # OpenWeatherMap API client
-│   ├── geo/                        # GeoJSON parsing for state boundaries
-│   ├── model/                      # Data models
-│   └── repository/                 # Weather data repository
+│   ├── geo/                        # GeoJSON parsing, city data loading
+│   ├── model/                      # Data models (City, TemperatureData)
+│   └── repository/                 # City weather data repository
 ├── domain/
 │   ├── CoordinateTransformer.kt    # Lat/lon to screen coordinates
 │   ├── StateGeometry.kt            # State boundary models
@@ -71,11 +73,12 @@ composeApp/src/commonMain/kotlin/edu/emailman/us_temperatures/
 │   └── TemperatureColorMapper.kt   # Temperature to color mapping
 ├── ui/
 │   ├── components/
+│   │   ├── CityTooltip.kt          # City weather detail popup
 │   │   ├── ColorLegend.kt          # Temperature scale sidebar
 │   │   ├── GridOverlay.kt          # Lat/lon grid lines
-│   │   ├── HeatMapRenderer.kt      # Temperature display
+│   │   ├── HeatMapRenderer.kt      # City marker display
 │   │   ├── StateBoundariesRenderer.kt  # State/national borders
-│   │   └── USMapCanvas.kt          # Main map canvas
+│   │   └── USMapCanvas.kt          # Main interactive map canvas
 │   └── MainScreen.kt               # Main UI layout
 ├── viewmodel/
 │   └── TemperatureViewModel.kt     # State management

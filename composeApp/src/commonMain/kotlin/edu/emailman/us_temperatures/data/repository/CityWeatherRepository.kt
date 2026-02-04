@@ -23,7 +23,12 @@ class CityWeatherRepository(private val api: OpenWeatherMapApi) {
                         cityName = city.name,
                         stateName = city.state,
                         weatherCondition = weather?.main ?: "",
-                        weatherDescription = weather?.description ?: ""
+                        weatherDescription = weather?.description ?: "",
+                        humidity = response.main.humidity,
+                        windSpeed = response.wind?.speed ?: 0.0,
+                        windDirection = response.wind?.deg ?: 0,
+                        tempMin = response.main.tempMin,
+                        tempMax = response.main.tempMax
                     )
                 )
                 // Rate limiting: OpenWeatherMap free tier allows 60 calls/minute

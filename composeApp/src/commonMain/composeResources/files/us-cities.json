@@ -10,7 +10,6 @@
   {"name": "Dallas", "state": "TX", "latitude": 32.7767, "longitude": -96.7970},
   {"name": "Austin", "state": "TX", "latitude": 30.2672, "longitude": -97.7431},
   {"name": "Jacksonville", "state": "FL", "latitude": 30.3322, "longitude": -81.6557},
-  {"name": "Fort Worth", "state": "TX", "latitude": 32.7555, "longitude": -97.3308},
   {"name": "Columbus", "state": "OH", "latitude": 39.9612, "longitude": -82.9988},
   {"name": "Charlotte", "state": "NC", "latitude": 35.2271, "longitude": -80.8431},
   {"name": "San Francisco", "state": "CA", "latitude": 37.7749, "longitude": -122.4194},
