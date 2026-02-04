@@ -49,7 +49,7 @@ fun USMapCanvas(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFD3D3D3)) // Light gray background
+            .background(Color(0xFFE8F4FC)) // Very light blue
     ) {
         val density = LocalDensity.current
         val widthPx = with(density) { maxWidth.toPx() }
@@ -79,30 +79,36 @@ fun USMapCanvas(
                 }
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                // Layer 1: City markers (bottom)
+                // Layer 1: State fills (light blue background)
+                drawStateFills(
+                    states = stateBoundaries,
+                    fillColor = Color(0xFFB8D4E8)
+                )
+
+                // Layer 2: State borders (blue)
+                drawStateBoundaries(
+                    states = stateBoundaries,
+                    borderColor = Color(0xFF4A90D9),
+                    borderWidth = 1f
+                )
+
+                // Layer 3: National border (thicker blue)
+                drawNationalBorder(
+                    states = stateBoundaries,
+                    borderColor = Color(0xFF4A90D9),
+                    borderWidth = 2f
+                )
+
+                // Layer 4: Grid overlay
+                drawGridOverlay(transformer, textMeasurer, showGrid)
+
+                // Layer 5: City markers (foreground, on top of everything)
                 cityDisplayData = drawCityMarkers(
                     cities = cityTemperatures,
                     transformer = transformer,
                     textMeasurer = textMeasurer,
                     selectedCity = selectedCity
                 )
-
-                // Layer 2: State borders (thin gray, 0.5px)
-                drawStateBoundaries(
-                    states = stateBoundaries,
-                    borderColor = Color(0xFF808080),
-                    borderWidth = 0.5f
-                )
-
-                // Layer 3: National border (thick dark green, 2px)
-                drawNationalBorder(
-                    states = stateBoundaries,
-                    borderColor = Color(0xFF2E4A2E),
-                    borderWidth = 2f
-                )
-
-                // Layer 4: Grid overlay (top)
-                drawGridOverlay(transformer, textMeasurer, showGrid)
             }
 
             // Tooltip overlay for selected city

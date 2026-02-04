@@ -131,9 +131,9 @@ fun DrawScope.drawCityMarkers(
         val radius = (max(textResult.size.width, textResult.size.height) / 2f + 10f) * 0.9f
         val center = Offset(screenCoords.x, screenCoords.y)
 
-        // Draw filled circle background
+        // Draw filled circle background (fully opaque)
         drawCircle(
-            color = color.copy(alpha = 0.85f),
+            color = color,
             radius = radius,
             center = center,
             style = Fill

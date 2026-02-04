@@ -8,9 +8,11 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import edu.emailman.us_temperatures.viewmodel.TemperatureViewModel
 
+private const val API_KEY = "f282e6810344a266faf4e7311d63359d"
+
 fun main() = application {
-    val envApiKey = System.getenv("OPENWEATHERMAP_API_KEY")
-    val viewModel = remember { TemperatureViewModel(envApiKey) }
+    val apiKey = System.getenv("OPENWEATHERMAP_API_KEY") ?: API_KEY
+    val viewModel = remember { TemperatureViewModel(apiKey) }
 
     Window(
         onCloseRequest = ::exitApplication,
