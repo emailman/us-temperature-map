@@ -74,5 +74,9 @@
   {"name": "Tulsa", "state": "OK", "latitude": 36.1540, "longitude": -95.9928},
   {"name": "Rapid City", "state": "SD", "latitude": 44.0805, "longitude": -103.2310},
   {"name": "Reno", "state": "NV", "latitude": 39.5296, "longitude": -119.8138},
-  {"name": "Charleston", "state": "WV", "latitude": 38.3498, "longitude": -81.6326}
+  {"name": "Charleston", "state": "WV", "latitude": 38.3498, "longitude": -81.6326},
+  {"name": "Albany", "state": "NY", "latitude": 42.6526, "longitude": -73.7562},
+  {"name": "Bangor", "state": "ME", "latitude": 44.8016, "longitude": -68.7712},
+  {"name": "Caribou", "state": "ME", "latitude": 46.8606, "longitude": -68.0128},
+  {"name": "Green Bay", "state": "WI", "latitude": 44.5133, "longitude": -88.0133}
 ]
