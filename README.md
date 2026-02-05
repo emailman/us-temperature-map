@@ -7,8 +7,8 @@ A Kotlin Multiplatform application that displays real-time temperatures for majo
 ## Features
 
 - **Real-time temperature data** from OpenWeatherMap API for 100 major US cities
-- **Interactive city markers** - click/tap to see detailed weather information
-- **City tooltips** showing temperature, weather conditions, high/low, humidity, and wind speed with direction
+- **Interactive city markers** - hover to preview, click/tap to pin detailed weather information
+- **City tooltips** showing temperature, weather conditions, high/low, humidity, and wind speed with direction (hover to preview, click to pin)
 - **Precise state boundaries** rendered from GeoJSON data (48 continental states)
 - **Color-coded temperatures** with white text and colored circles (blue for cold, red for hot)
 - **5° x 5° grid overlay** with latitude/longitude labels (toggleable)

@@ -9,7 +9,7 @@ A Kotlin Multiplatform application displaying real-time temperatures for major U
 ### Features
 - Real-time temperature data from OpenWeatherMap API
 - City-based temperature display (100 major US cities loaded from JSON)
-- Interactive tooltips on click/tap showing:
+- Interactive tooltips on hover (preview) or click/tap (pin) showing:
   - City name and state
   - Current temperature
   - Weather description
@@ -84,7 +84,7 @@ composeApp/src/commonMain/kotlin/edu/emailman/us_temperatures/
 3. State borders (thin gray, 0.5px)
 4. National border (thick dark green, 2px)
 5. Grid overlay (dashed lines with labels)
-6. City tooltip (when city selected)
+6. City tooltip (when city hovered or selected)
 
 ### Temperature Colors
 | Temp (°F) | Color |
