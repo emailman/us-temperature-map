@@ -22,41 +22,41 @@ fun DrawScope.drawGridOverlay(
     val dashEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
     val textStyle = TextStyle(fontSize = 10.sp, color = labelColor)
 
-    // Draw latitude lines (horizontal)
+    // Draw latitude lines (horizontal) - within map bounds
     for ((lat, y) in transformer.getLatitudeLines()) {
         drawLine(
             color = gridColor,
-            start = Offset(0f, y),
-            end = Offset(size.width, y),
+            start = Offset(transformer.offsetX, y),
+            end = Offset(transformer.offsetX + transformer.mapWidth, y),
             strokeWidth = 1f,
             pathEffect = dashEffect
         )
 
-        // Label on left side
+        // Label on left side (within map area)
         val label = "${lat.toInt()}°N"
         val textResult = textMeasurer.measure(label, textStyle)
         drawText(
             textLayoutResult = textResult,
-            topLeft = Offset(4f, y - textResult.size.height / 2)
+            topLeft = Offset(transformer.offsetX + 4f, y - textResult.size.height / 2)
         )
     }
 
-    // Draw longitude lines (vertical)
+    // Draw longitude lines (vertical) - within map bounds
     for ((lon, x) in transformer.getLongitudeLines()) {
         drawLine(
             color = gridColor,
-            start = Offset(x, 0f),
-            end = Offset(x, size.height),
+            start = Offset(x, transformer.offsetY),
+            end = Offset(x, transformer.offsetY + transformer.mapHeight),
             strokeWidth = 1f,
             pathEffect = dashEffect
         )
 
-        // Label at bottom
+        // Label at bottom (within map area)
         val label = "${(-lon).toInt()}°W"
         val textResult = textMeasurer.measure(label, textStyle)
         drawText(
             textLayoutResult = textResult,
-            topLeft = Offset(x - textResult.size.width / 2, size.height - textResult.size.height - 4f)
+            topLeft = Offset(x - textResult.size.width / 2, transformer.offsetY + transformer.mapHeight - textResult.size.height - 4f)
         )
     }
 }

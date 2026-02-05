@@ -18,4 +18,11 @@ object Constants {
     // Temperature range (Fahrenheit)
     const val TEMP_MIN = 0.0
     const val TEMP_MAX = 100.0
+
+    // Geographic aspect ratio (width/height) for proper map proportions
+    // Must account for longitude compression at mid-latitudes: cos(center_latitude)
+    // Center latitude = (25 + 49) / 2 = 37°, cos(37°) ≈ 0.7986
+    private const val CENTER_LAT_RADIANS = 0.6458  // 37 degrees in radians
+    private const val LON_CORRECTION = 0.7986      // cos(37°)
+    const val US_ASPECT_RATIO = ((US_LON_MAX - US_LON_MIN) * LON_CORRECTION) / (US_LAT_MAX - US_LAT_MIN)  // ~1.96
 }

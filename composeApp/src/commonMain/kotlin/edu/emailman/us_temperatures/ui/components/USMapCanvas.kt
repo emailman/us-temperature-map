@@ -118,23 +118,60 @@ fun USMapCanvas(
                     it.temperatureData.longitude == city.longitude
                 }
                 displayData?.let { data ->
-                    val isLowLatitude = city.latitude < 30.0
-                    val isEastCoast = city.longitude > -75.0
-                    val tooltipOffsetX = when {
-                        isLowLatitude -> with(density) { (data.screenX - 60).toInt() }  // Center above marker
-                        isEastCoast -> with(density) { (data.screenX - 160).toInt() }  // Left of marker
-                        else -> with(density) { (data.screenX + data.radius + 8).toInt() }  // Right of marker
+                    // Tooltip dimensions (approximate)
+                    val tooltipWidth = 180f
+                    val tooltipHeight = 180f
+                    val margin = 8f
+
+                    // Map bounds from transformer
+                    val mapLeft = transformer.offsetX
+                    val mapRight = transformer.offsetX + transformer.mapWidth
+                    val mapTop = transformer.offsetY
+                    val mapBottom = transformer.offsetY + transformer.mapHeight
+
+                    // Check available space in each direction
+                    val spaceRight = mapRight - (data.screenX + data.radius)
+                    val spaceLeft = data.screenX - data.radius - mapLeft
+                    val spaceBelow = mapBottom - data.screenY
+                    val spaceAbove = data.screenY - mapTop
+
+                    // Determine horizontal position
+                    val tooltipX = when {
+                        spaceRight >= tooltipWidth + margin -> {
+                            // Place to the right of marker
+                            (data.screenX + data.radius + margin).toInt()
+                        }
+                        spaceLeft >= tooltipWidth + margin -> {
+                            // Place to the left of marker
+                            (data.screenX - data.radius - margin - tooltipWidth).toInt()
+                        }
+                        else -> {
+                            // Center horizontally on the marker, clamped to map bounds
+                            val centered = data.screenX - tooltipWidth / 2
+                            centered.coerceIn(mapLeft, mapRight - tooltipWidth).toInt()
+                        }
                     }
-                    val tooltipOffsetY = if (isLowLatitude) {
-                        with(density) { (data.screenY - 180).toInt() }  // Above marker
-                    } else {
-                        with(density) { (data.screenY - 40).toInt() }  // Current position
+
+                    // Determine vertical position
+                    val tooltipY = when {
+                        // If we're placing tooltip to the side, try to center vertically on marker
+                        spaceRight >= tooltipWidth + margin || spaceLeft >= tooltipWidth + margin -> {
+                            val centered = data.screenY - tooltipHeight / 2
+                            centered.coerceIn(mapTop, mapBottom - tooltipHeight).toInt()
+                        }
+                        // Otherwise place above or below
+                        spaceAbove >= tooltipHeight + margin -> {
+                            (data.screenY - data.radius - margin - tooltipHeight).toInt()
+                        }
+                        else -> {
+                            (data.screenY + data.radius + margin).toInt()
+                        }
                     }
 
                     CityTooltip(
                         city = city,
                         modifier = Modifier
-                            .offset { IntOffset(tooltipOffsetX, tooltipOffsetY) }
+                            .offset { IntOffset(tooltipX, tooltipY) }
                             .padding(4.dp)
                     )
                 }
