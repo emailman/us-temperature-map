@@ -38,6 +38,9 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
     private val _selectedCity = MutableStateFlow<TemperatureData?>(null)
     val selectedCity: StateFlow<TemperatureData?> = _selectedCity.asStateFlow()
 
+    private val _hoveredCity = MutableStateFlow<TemperatureData?>(null)
+    val hoveredCity: StateFlow<TemperatureData?> = _hoveredCity.asStateFlow()
+
     private val _loadingState = MutableStateFlow<LoadingState>(
         if (initialApiKey.isNullOrBlank()) LoadingState.NoApiKey else LoadingState.Idle
     )
@@ -120,6 +123,10 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
 
     fun selectCity(city: TemperatureData?) {
         _selectedCity.value = city
+    }
+
+    fun hoverCity(city: TemperatureData?) {
+        _hoveredCity.value = city
     }
 
     fun toggleGrid() {

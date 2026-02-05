@@ -16,6 +16,7 @@ import edu.emailman.us_temperatures.viewmodel.TemperatureViewModel
 fun MainScreen(viewModel: TemperatureViewModel) {
     val cityTemperatures by viewModel.cityTemperatures.collectAsState()
     val selectedCity by viewModel.selectedCity.collectAsState()
+    val hoveredCity by viewModel.hoveredCity.collectAsState()
     val loadingState by viewModel.loadingState.collectAsState()
     val lastUpdated by viewModel.lastUpdated.collectAsState()
     val showGrid by viewModel.showGrid.collectAsState()
@@ -107,7 +108,9 @@ fun MainScreen(viewModel: TemperatureViewModel) {
                 USMapCanvas(
                     cityTemperatures = cityTemperatures,
                     selectedCity = selectedCity,
+                    hoveredCity = hoveredCity,
                     onCitySelected = { viewModel.selectCity(it) },
+                    onCityHovered = { viewModel.hoverCity(it) },
                     showGrid = showGrid,
                     modifier = Modifier.weight(1f)
                 )

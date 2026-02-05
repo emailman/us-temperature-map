@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -33,7 +34,9 @@ import edu.emailman.us_temperatures.ui.model.CityDisplayData
 fun USMapCanvas(
     cityTemperatures: List<TemperatureData>,
     selectedCity: TemperatureData?,
+    hoveredCity: TemperatureData?,
     onCitySelected: (TemperatureData?) -> Unit,
+    onCityHovered: (TemperatureData?) -> Unit,
     showGrid: Boolean = true,
     modifier: Modifier = Modifier
 ) {
@@ -77,6 +80,18 @@ fun USMapCanvas(
                         onCitySelected(tappedCity?.temperatureData)
                     }
                 }
+                .pointerInput(cityDisplayData) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            if (event.type == PointerEventType.Move) {
+                                val position = event.changes.first().position
+                                val hovered = cityDisplayData.find { it.containsPoint(position.x, position.y) }
+                                onCityHovered(hovered?.temperatureData)
+                            }
+                        }
+                    }
+                }
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 // Layer 1: State fills (light blue background)
@@ -111,8 +126,9 @@ fun USMapCanvas(
                 )
             }
 
-            // Tooltip overlay for selected city
-            selectedCity?.let { city ->
+            // Tooltip overlay for selected or hovered city (selected takes priority)
+            val tooltipCity = selectedCity ?: hoveredCity
+            tooltipCity?.let { city ->
                 val displayData = cityDisplayData.find {
                     it.temperatureData.latitude == city.latitude &&
                     it.temperatureData.longitude == city.longitude
