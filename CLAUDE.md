@@ -7,8 +7,9 @@ A Kotlin Multiplatform application displaying real-time temperatures for major U
 ## Current Implementation
 
 ### Features
-- Real-time temperature data from OpenWeatherMap API
-- City-based temperature display (100 major US cities loaded from JSON)
+- Pre-cached temperature data loads instantly on startup (via GitHub Actions)
+- Real-time temperature data from OpenWeatherMap API (on-demand refresh)
+- City-based temperature display (80 major US cities loaded from JSON)
 - Interactive tooltips on hover (preview) or click/tap (pin) showing:
   - City name and state
   - Current temperature
@@ -19,8 +20,23 @@ A Kotlin Multiplatform application displaying real-time temperatures for major U
 - Precise GeoJSON-based state boundaries (48 continental states)
 - Temperature readings displayed as colored circles with white text
 - 5° x 5° grid with dashed lines and labels (toggleable)
-- Progressive loading with progress indicator
-- Refresh button
+- Progressive loading with progress indicator (when fetching from API)
+- Refresh button (live API on JVM, re-fetches cache on web)
+
+### Temperature Caching System
+
+A GitHub Actions cron job fetches all city temperatures every 3 hours and commits `dist/temperatures.json`, triggering a Vercel auto-deploy. All targets load this cached data instantly on startup.
+
+**Data flow:**
+- **GitHub Actions** (every 3 hours): `scripts/fetch-temperatures.js` -> `dist/temperatures.json` -> git push -> Vercel deploy
+- **Web (Vercel)**: Fetches `temperatures.json` from same-origin CDN (cache-busted with random query param)
+- **Web (local dev)**: Webpack dev server serves `temperatures.json` from `dist/` via `webpack.config.d/static-files.js`
+- **JVM**: Reads `dist/temperatures.json` from local filesystem (checks both `dist/` and `../dist/` for Gradle CWD)
+- **Fallback**: If cache unavailable, falls back to API key prompt and live API calls
+
+**Refresh behavior:**
+- **JVM** (has API key): Live API fetch for all cities, saves results back to `dist/temperatures.json`
+- **Web** (no API key): Re-fetches static `temperatures.json` from server
 
 ### Architecture
 
@@ -31,12 +47,15 @@ composeApp/src/commonMain/kotlin/edu/emailman/us_temperatures/
 │   ├── api/
 │   │   ├── OpenWeatherMapApi.kt    # Ktor HTTP client
 │   │   └── WeatherResponse.kt      # API response DTOs (includes Wind, Weather)
+│   ├── cache/
+│   │   └── TemperatureCacheLoader.kt  # expect: load/save cached temperatures
 │   ├── geo/
 │   │   ├── GeoJsonModels.kt        # GeoJSON serialization models
 │   │   ├── GeoJsonParser.kt        # Parse GeoJSON to domain models
 │   │   ├── USCitiesData.kt         # Load cities from JSON resource
 │   │   └── USStatesGeoData.kt      # Load/cache state boundaries
 │   ├── model/
+│   │   ├── CachedTemperatureResponse.kt  # Cache JSON DTOs with toTemperatureData()
 │   │   ├── City.kt                 # City data model
 │   │   └── TemperatureData.kt      # Temperature domain model with weather details
 │   └── repository/
@@ -59,10 +78,28 @@ composeApp/src/commonMain/kotlin/edu/emailman/us_temperatures/
 │   │   └── CityDisplayData.kt      # Screen coordinates for hit testing
 │   └── MainScreen.kt               # Main layout with controls
 ├── viewmodel/
-│   └── TemperatureViewModel.kt     # State management
+│   └── TemperatureViewModel.kt     # State management (cache-first loading)
 └── util/
     ├── Constants.kt                # US bounds, grid config
-    └── TimeUtil.kt                 # Time formatting
+    └── TimeUtil.kt                 # Time formatting (expect/actual)
+```
+
+**Platform-specific actuals:**
+```
+composeApp/src/{jvmMain,jsMain,wasmJsMain}/kotlin/edu/emailman/us_temperatures/
+├── data/cache/
+│   └── TemperatureCacheLoader.{jvm,js,wasmJs}.kt  # Platform cache loader
+├── util/
+│   └── TimeUtil.{jvm,js,wasmJs}.kt                # Platform time formatting
+└── main.kt                                         # Platform entry point
+```
+
+**Build/deploy files:**
+```
+.github/workflows/update-temperatures.yml  # Cron job (every 3 hours)
+scripts/fetch-temperatures.js              # Node.js fetch script
+dist/temperatures.json                     # Generated cached temperature data
+composeApp/webpack.config.d/static-files.js  # Dev server static file config
 ```
 
 ### Configuration (Constants.kt)
@@ -98,13 +135,13 @@ composeApp/src/commonMain/kotlin/edu/emailman/us_temperatures/
 | 100+ | Crimson (#DC143C) |
 
 ### API Key Handling
-- **JVM**: `System.getenv("OPENWEATHERMAP_API_KEY")`
-- **Web**: Enter in UI prompt or URL parameter `?apiKey=xxx`
+- **JVM**: `System.getenv("OPENWEATHERMAP_API_KEY")` (or hardcoded fallback in main.kt)
+- **Web**: Cache-first loading requires no API key; URL parameter `?apiKey=xxx` available for override
+- **GitHub Actions**: `OPENWEATHERMAP_API_KEY` repository secret
 
 ### City Data
 - Cities loaded from `composeResources/files/us-cities.json`
-- 100 major US cities with name, state, latitude, longitude
-- Total: 100 API calls per refresh (rate limited to ~55/minute)
+- 80 major US cities with name, state, latitude, longitude
 
 ### TemperatureData Model
 ```kotlin
@@ -125,6 +162,24 @@ data class TemperatureData(
 )
 ```
 
+### Cached Temperature Format (dist/temperatures.json)
+```json
+{
+  "fetchedAt": "2026-02-21 15:38:59",
+  "cityCount": 80,
+  "temperatures": [
+    {
+      "latitude": 40.7128, "longitude": -74.006,
+      "temperature": 35.2, "locationName": "New York",
+      "cityName": "New York", "stateName": "NY",
+      "weatherCondition": "Clouds", "weatherDescription": "overcast clouds",
+      "humidity": 62, "windSpeed": 8.5, "windDirection": 270,
+      "tempMin": 32.1, "tempMax": 38.4
+    }
+  ]
+}
+```
+
 ## Build Commands
 
 ```shell
@@ -139,12 +194,16 @@ data class TemperatureData(
 
 # Compile check
 ./gradlew.bat :composeApp:compileKotlinJvm
+
+# Fetch fresh temperatures (requires OPENWEATHERMAP_API_KEY env var)
+node scripts/fetch-temperatures.js
 ```
 
 ## Resources
 
 - `composeResources/files/us-states.geojson` - State boundary data (~89KB)
-- `composeResources/files/us-cities.json` - City coordinates (100 cities)
+- `composeResources/files/us-cities.json` - City coordinates (80 cities)
+- `dist/temperatures.json` - Cached temperature data (~20KB, auto-generated)
 - Source: Natural Earth / PublicaMundi
 
 ## Dependencies
@@ -153,3 +212,7 @@ data class TemperatureData(
 - kotlinx-serialization 1.8.0 - JSON parsing
 - kotlinx-datetime 0.6.1 - Date/time handling
 - Compose Multiplatform - UI framework
+
+## Known Issues
+
+- `kotlinx-datetime` classes throw `ClassNotFoundException` at JVM runtime; avoid using `Clock.System` or `Instant` in common code that runs on JVM. Use platform-specific time functions via expect/actual instead.

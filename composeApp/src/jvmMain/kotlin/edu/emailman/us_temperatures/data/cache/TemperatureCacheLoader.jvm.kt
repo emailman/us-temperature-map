@@ -31,7 +31,8 @@ actual fun saveCachedTemperatures(response: CachedTemperatureResponse) {
         val file = findCacheFile() ?: File("dist/temperatures.json")
         file.parentFile?.mkdirs()
         file.writeText(json.encodeToString(CachedTemperatureResponse.serializer(), response))
-    } catch (_: Exception) {
-        // Best effort — don't crash if write fails
+        println("Saved ${response.cityCount} temperatures to ${file.absolutePath}")
+    } catch (e: Exception) {
+        println("Failed to save temperatures cache: ${e.message}")
     }
 }
