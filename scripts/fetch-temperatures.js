@@ -69,8 +69,11 @@ async function main() {
         process.exit(1);
     }
 
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fetchedAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     const output = {
-        fetchedAt: new Date().toISOString(),
+        fetchedAt,
         cityCount: temperatures.length,
         temperatures: temperatures
     };
