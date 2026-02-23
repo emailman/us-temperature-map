@@ -75,6 +75,12 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
                 null
             }
 
+            // Initialize API client if key is available
+            if (!initialApiKey.isNullOrBlank()) {
+                api = OpenWeatherMapApi(initialApiKey)
+                repository = CityWeatherRepository(api!!)
+            }
+
             if (cached != null && cached.temperatures.isNotEmpty()) {
                 _cityTemperatures.value = cached.temperatures.map { it.toTemperatureData() }
                 _dataSource.value = DataSource.CACHE
@@ -85,9 +91,7 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
                 }
                 _lastUpdated.value = formatCacheTimestamp()
                 _loadingState.value = LoadingState.Success
-            } else if (!initialApiKey.isNullOrBlank()) {
-                api = OpenWeatherMapApi(initialApiKey)
-                repository = CityWeatherRepository(api!!)
+            } else if (repository != null) {
                 refreshTemperatures()
             } else {
                 _loadingState.value = LoadingState.NoApiKey

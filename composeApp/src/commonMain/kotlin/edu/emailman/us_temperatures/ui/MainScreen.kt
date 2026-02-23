@@ -47,8 +47,8 @@ fun MainScreen(viewModel: TemperatureViewModel) {
                     if (hasApiKey != null || dataSource == DataSource.CACHE) {
                         TextButton(
                             onClick = {
-                                if (dataSource == DataSource.CACHE) viewModel.refreshFromCache()
-                                else viewModel.refreshTemperatures()
+                                if (hasApiKey != null) viewModel.refreshTemperatures()
+                                else viewModel.refreshFromCache()
                             },
                             enabled = loadingState !is LoadingState.Loading
                         ) {
