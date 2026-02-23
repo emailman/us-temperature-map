@@ -6,6 +6,7 @@ import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
 
 actual suspend fun loadCachedTemperatures(): CachedTemperatureResponse? {
@@ -15,7 +16,8 @@ actual suspend fun loadCachedTemperatures(): CachedTemperatureResponse? {
                 json(Json { ignoreUnknownKeys = true })
             }
         }
-        val response: CachedTemperatureResponse = client.get("temperatures.json").body()
+        val cacheBuster = Clock.System.now().toEpochMilliseconds()
+        val response: CachedTemperatureResponse = client.get("temperatures.json?t=$cacheBuster").body()
         client.close()
         response
     } catch (e: Exception) {
