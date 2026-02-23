@@ -17,8 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import edu.emailman.us_temperatures.util.getCurrentTimeString
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 sealed class LoadingState {
     object Idle : LoadingState()
@@ -64,8 +62,6 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
     private val _dataSource = MutableStateFlow(DataSource.NONE)
     val dataSource: StateFlow<DataSource> = _dataSource.asStateFlow()
 
-    private var cacheTimestamp: Instant? = null
-
     init {
         viewModelScope.launch {
             cities = USCitiesData.loadCities()
@@ -87,12 +83,7 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
             if (cached != null && cached.temperatures.isNotEmpty()) {
                 _cityTemperatures.value = cached.temperatures.map { it.toTemperatureData() }
                 _dataSource.value = DataSource.CACHE
-                cacheTimestamp = try {
-                    Instant.parse(cached.fetchedAt)
-                } catch (_: Exception) {
-                    null
-                }
-                _lastUpdated.value = formatCacheTimestamp()
+                _lastUpdated.value = "Cached: ${cached.fetchedAt}"
                 _loadingState.value = LoadingState.Success
             } else if (repository != null) {
                 refreshTemperatures()
@@ -148,9 +139,9 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
                 }
 
                 // Save to cache file
-                val now = Clock.System.now()
+                val timeString = getCurrentTimeString()
                 saveCachedTemperatures(CachedTemperatureResponse(
-                    fetchedAt = now.toString(),
+                    fetchedAt = timeString,
                     cityCount = _cityTemperatures.value.size,
                     temperatures = _cityTemperatures.value.map { t ->
                         CachedTemperatureEntry(
@@ -173,7 +164,7 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
 
                 _dataSource.value = DataSource.API
                 _loadingState.value = LoadingState.Success
-                _lastUpdated.value = getCurrentTimeString()
+                _lastUpdated.value = timeString
             } catch (e: Exception) {
                 _loadingState.value = LoadingState.Error(e.message ?: "Unknown error")
             }
@@ -191,30 +182,8 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
             if (cached != null && cached.temperatures.isNotEmpty()) {
                 _cityTemperatures.value = cached.temperatures.map { it.toTemperatureData() }
                 _dataSource.value = DataSource.CACHE
-                cacheTimestamp = try {
-                    Instant.parse(cached.fetchedAt)
-                } catch (_: Exception) {
-                    null
-                }
-                _lastUpdated.value = formatCacheTimestamp()
+                _lastUpdated.value = "Cached: ${cached.fetchedAt}"
                 _loadingState.value = LoadingState.Success
-            }
-        }
-    }
-
-    private fun formatCacheTimestamp(): String {
-        val ts = cacheTimestamp ?: return "Updated from cache"
-        val now = Clock.System.now()
-        val elapsed = now - ts
-        val totalMinutes = elapsed.inWholeMinutes
-        return when {
-            totalMinutes < 1 -> "Updated just now"
-            totalMinutes < 60 -> "Updated $totalMinutes min ago"
-            else -> {
-                val hours = totalMinutes / 60
-                val minutes = totalMinutes % 60
-                if (minutes == 0L) "Updated $hours hr ago"
-                else "Updated $hours hr $minutes min ago"
             }
         }
     }
