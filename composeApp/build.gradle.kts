@@ -65,26 +65,6 @@ kotlin {
 }
 
 
-// Copy temperatures.json into webpack dev server directories for local testing
-tasks.register<Copy>("copyTemperaturesForDev") {
-    from(rootProject.file("dist/temperatures.json"))
-    into(layout.buildDirectory.dir("kotlin-webpack/wasmJs/developmentExecutable"))
-}
-
-tasks.register<Copy>("copyTemperaturesForJsDev") {
-    from(rootProject.file("dist/temperatures.json"))
-    into(layout.buildDirectory.dir("kotlin-webpack/js/developmentExecutable"))
-}
-
-tasks.configureEach {
-    if (name == "wasmJsBrowserDevelopmentRun") {
-        dependsOn("copyTemperaturesForDev")
-    }
-    if (name == "jsBrowserDevelopmentRun") {
-        dependsOn("copyTemperaturesForJsDev")
-    }
-}
-
 compose.desktop {
     application {
         mainClass = "edu.emailman.us_temperatures.MainKt"
