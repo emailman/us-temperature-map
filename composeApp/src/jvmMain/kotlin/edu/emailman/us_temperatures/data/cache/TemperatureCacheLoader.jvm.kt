@@ -8,12 +8,13 @@ private val json = Json { ignoreUnknownKeys = true }
 
 actual suspend fun loadCachedTemperatures(): CachedTemperatureResponse? {
     return try {
-        val file = File("dist/temperatures.json")
-        if (file.exists()) {
-            json.decodeFromString<CachedTemperatureResponse>(file.readText())
-        } else {
-            null
-        }
+        // Try both project root and parent (Gradle run CWD is composeApp/)
+        val candidates = listOf(
+            File("dist/temperatures.json"),
+            File("../dist/temperatures.json")
+        )
+        val file = candidates.firstOrNull { it.exists() } ?: return null
+        json.decodeFromString<CachedTemperatureResponse>(file.readText())
     } catch (_: Exception) {
         null
     }
