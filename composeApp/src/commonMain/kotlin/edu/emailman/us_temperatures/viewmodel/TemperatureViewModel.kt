@@ -3,6 +3,7 @@ package edu.emailman.us_temperatures.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import edu.emailman.us_temperatures.data.api.OpenWeatherMapApi
+import edu.emailman.us_temperatures.data.cache.loadCachedTemperatures
 import edu.emailman.us_temperatures.data.geo.USCitiesData
 import edu.emailman.us_temperatures.data.model.City
 import edu.emailman.us_temperatures.data.model.TemperatureData
@@ -13,6 +14,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import edu.emailman.us_temperatures.util.getCurrentTimeString
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 sealed class LoadingState {
     object Idle : LoadingState()
@@ -21,6 +24,8 @@ sealed class LoadingState {
     object Success : LoadingState()
     data class Error(val message: String) : LoadingState()
 }
+
+enum class DataSource { NONE, CACHE, API }
 
 class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
     private var api: OpenWeatherMapApi? = null
@@ -41,9 +46,7 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
     private val _hoveredCity = MutableStateFlow<TemperatureData?>(null)
     val hoveredCity: StateFlow<TemperatureData?> = _hoveredCity.asStateFlow()
 
-    private val _loadingState = MutableStateFlow<LoadingState>(
-        if (initialApiKey.isNullOrBlank()) LoadingState.NoApiKey else LoadingState.Idle
-    )
+    private val _loadingState = MutableStateFlow<LoadingState>(LoadingState.Idle)
     val loadingState: StateFlow<LoadingState> = _loadingState.asStateFlow()
 
     private val _lastUpdated = MutableStateFlow<String?>(null)
@@ -55,15 +58,39 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
     private val _totalCities = MutableStateFlow(0)
     val totalCities: StateFlow<Int> = _totalCities.asStateFlow()
 
+    private val _dataSource = MutableStateFlow(DataSource.NONE)
+    val dataSource: StateFlow<DataSource> = _dataSource.asStateFlow()
+
+    private var cacheTimestamp: Instant? = null
+
     init {
         viewModelScope.launch {
             cities = USCitiesData.loadCities()
             _totalCities.value = cities.size
 
-            if (!initialApiKey.isNullOrBlank()) {
+            // Try loading cached temperatures first
+            val cached = try {
+                loadCachedTemperatures()
+            } catch (_: Exception) {
+                null
+            }
+
+            if (cached != null && cached.temperatures.isNotEmpty()) {
+                _cityTemperatures.value = cached.temperatures.map { it.toTemperatureData() }
+                _dataSource.value = DataSource.CACHE
+                cacheTimestamp = try {
+                    Instant.parse(cached.fetchedAt)
+                } catch (_: Exception) {
+                    null
+                }
+                _lastUpdated.value = formatCacheTimestamp()
+                _loadingState.value = LoadingState.Success
+            } else if (!initialApiKey.isNullOrBlank()) {
                 api = OpenWeatherMapApi(initialApiKey)
                 repository = CityWeatherRepository(api!!)
                 refreshTemperatures()
+            } else {
+                _loadingState.value = LoadingState.NoApiKey
             }
         }
     }
@@ -113,10 +140,50 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
                     )
                 }
 
+                _dataSource.value = DataSource.API
                 _loadingState.value = LoadingState.Success
                 _lastUpdated.value = getCurrentTimeString()
             } catch (e: Exception) {
                 _loadingState.value = LoadingState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun refreshFromCache() {
+        viewModelScope.launch {
+            val cached = try {
+                loadCachedTemperatures()
+            } catch (_: Exception) {
+                null
+            }
+
+            if (cached != null && cached.temperatures.isNotEmpty()) {
+                _cityTemperatures.value = cached.temperatures.map { it.toTemperatureData() }
+                _dataSource.value = DataSource.CACHE
+                cacheTimestamp = try {
+                    Instant.parse(cached.fetchedAt)
+                } catch (_: Exception) {
+                    null
+                }
+                _lastUpdated.value = formatCacheTimestamp()
+                _loadingState.value = LoadingState.Success
+            }
+        }
+    }
+
+    private fun formatCacheTimestamp(): String {
+        val ts = cacheTimestamp ?: return "Updated from cache"
+        val now = Clock.System.now()
+        val elapsed = now - ts
+        val totalMinutes = elapsed.inWholeMinutes
+        return when {
+            totalMinutes < 1 -> "Updated just now"
+            totalMinutes < 60 -> "Updated $totalMinutes min ago"
+            else -> {
+                val hours = totalMinutes / 60
+                val minutes = totalMinutes % 60
+                if (minutes == 0L) "Updated $hours hr ago"
+                else "Updated $hours hr $minutes min ago"
             }
         }
     }

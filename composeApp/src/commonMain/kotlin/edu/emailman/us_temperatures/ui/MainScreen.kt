@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import edu.emailman.us_temperatures.ui.components.ColorLegend
 import edu.emailman.us_temperatures.ui.components.USMapCanvas
+import edu.emailman.us_temperatures.viewmodel.DataSource
 import edu.emailman.us_temperatures.viewmodel.LoadingState
 import edu.emailman.us_temperatures.viewmodel.TemperatureViewModel
 
@@ -22,6 +23,7 @@ fun MainScreen(viewModel: TemperatureViewModel) {
     val showGrid by viewModel.showGrid.collectAsState()
     val hasApiKey by viewModel.apiKey.collectAsState()
     val totalCities by viewModel.totalCities.collectAsState()
+    val dataSource by viewModel.dataSource.collectAsState()
 
     Scaffold(
         topBar = {
@@ -41,10 +43,13 @@ fun MainScreen(viewModel: TemperatureViewModel) {
                         )
                     }
 
-                    // Refresh button (only show when API key is configured)
-                    if (hasApiKey != null) {
+                    // Refresh button (show when API key is configured or data loaded from cache)
+                    if (hasApiKey != null || dataSource == DataSource.CACHE) {
                         TextButton(
-                            onClick = { viewModel.refreshTemperatures() },
+                            onClick = {
+                                if (dataSource == DataSource.CACHE) viewModel.refreshFromCache()
+                                else viewModel.refreshTemperatures()
+                            },
                             enabled = loadingState !is LoadingState.Loading
                         ) {
                             Text("Refresh")
