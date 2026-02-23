@@ -4,18 +4,34 @@ import edu.emailman.us_temperatures.data.model.CachedTemperatureResponse
 import kotlinx.serialization.json.Json
 import java.io.File
 
-private val json = Json { ignoreUnknownKeys = true }
+private val json = Json {
+    ignoreUnknownKeys = true
+    prettyPrint = true
+}
+
+private fun findCacheFile(): File? {
+    // Try both project root and parent (Gradle run CWD is composeApp/)
+    return listOf(
+        File("dist/temperatures.json"),
+        File("../dist/temperatures.json")
+    ).firstOrNull { it.exists() }
+}
 
 actual suspend fun loadCachedTemperatures(): CachedTemperatureResponse? {
     return try {
-        // Try both project root and parent (Gradle run CWD is composeApp/)
-        val candidates = listOf(
-            File("dist/temperatures.json"),
-            File("../dist/temperatures.json")
-        )
-        val file = candidates.firstOrNull { it.exists() } ?: return null
+        val file = findCacheFile() ?: return null
         json.decodeFromString<CachedTemperatureResponse>(file.readText())
     } catch (_: Exception) {
         null
+    }
+}
+
+actual fun saveCachedTemperatures(response: CachedTemperatureResponse) {
+    try {
+        val file = findCacheFile() ?: File("dist/temperatures.json")
+        file.parentFile?.mkdirs()
+        file.writeText(json.encodeToString(CachedTemperatureResponse.serializer(), response))
+    } catch (_: Exception) {
+        // Best effort — don't crash if write fails
     }
 }

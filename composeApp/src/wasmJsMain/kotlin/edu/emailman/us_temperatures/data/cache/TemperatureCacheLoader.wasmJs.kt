@@ -9,6 +9,8 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
 
+actual fun saveCachedTemperatures(response: CachedTemperatureResponse) {}
+
 actual suspend fun loadCachedTemperatures(): CachedTemperatureResponse? {
     return try {
         val client = HttpClient {

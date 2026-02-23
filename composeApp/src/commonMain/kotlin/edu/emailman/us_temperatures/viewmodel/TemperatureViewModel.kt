@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import edu.emailman.us_temperatures.data.api.OpenWeatherMapApi
 import edu.emailman.us_temperatures.data.cache.loadCachedTemperatures
+import edu.emailman.us_temperatures.data.cache.saveCachedTemperatures
+import edu.emailman.us_temperatures.data.model.CachedTemperatureEntry
+import edu.emailman.us_temperatures.data.model.CachedTemperatureResponse
 import edu.emailman.us_temperatures.data.geo.USCitiesData
 import edu.emailman.us_temperatures.data.model.City
 import edu.emailman.us_temperatures.data.model.TemperatureData
@@ -143,6 +146,30 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
                         total = cities.size
                     )
                 }
+
+                // Save to cache file
+                val now = Clock.System.now()
+                saveCachedTemperatures(CachedTemperatureResponse(
+                    fetchedAt = now.toString(),
+                    cityCount = _cityTemperatures.value.size,
+                    temperatures = _cityTemperatures.value.map { t ->
+                        CachedTemperatureEntry(
+                            latitude = t.latitude,
+                            longitude = t.longitude,
+                            temperature = t.temperature,
+                            locationName = t.locationName,
+                            cityName = t.cityName,
+                            stateName = t.stateName,
+                            weatherCondition = t.weatherCondition,
+                            weatherDescription = t.weatherDescription,
+                            humidity = t.humidity,
+                            windSpeed = t.windSpeed,
+                            windDirection = t.windDirection,
+                            tempMin = t.tempMin,
+                            tempMax = t.tempMax
+                        )
+                    }
+                ))
 
                 _dataSource.value = DataSource.API
                 _loadingState.value = LoadingState.Success
