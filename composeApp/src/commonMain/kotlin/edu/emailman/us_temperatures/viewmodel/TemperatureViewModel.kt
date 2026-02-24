@@ -83,7 +83,7 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
             if (cached != null && cached.temperatures.isNotEmpty()) {
                 _cityTemperatures.value = cached.temperatures.map { it.toTemperatureData() }
                 _dataSource.value = DataSource.CACHE
-                _lastUpdated.value = "Cached: ${cached.fetchedAt}"
+                _lastUpdated.value = "Cached: ${cached.fetchedAt} UTC"
                 _loadingState.value = LoadingState.Success
             } else if (repository != null) {
                 refreshTemperatures()
@@ -182,7 +182,7 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
             if (cached != null && cached.temperatures.isNotEmpty()) {
                 _cityTemperatures.value = cached.temperatures.map { it.toTemperatureData() }
                 _dataSource.value = DataSource.CACHE
-                _lastUpdated.value = "Cached: ${cached.fetchedAt}"
+                _lastUpdated.value = "Cached: ${cached.fetchedAt} UTC"
                 _loadingState.value = LoadingState.Success
             }
         }
