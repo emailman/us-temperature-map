@@ -216,3 +216,4 @@ node scripts/fetch-temperatures.js
 ## Known Issues
 
 - `kotlinx-datetime` classes throw `ClassNotFoundException` at JVM runtime; avoid using `Clock.System` or `Instant` in common code that runs on JVM. Use platform-specific time functions via expect/actual instead.
+- Ktor WasmJS HTTP client requires **absolute URLs** — relative URLs like `"temperatures.json"` silently fail (the exception is swallowed, returning `null`). Always use `window.location.origin` to build the full URL: `"${window.location.origin}/temperatures.json?t=$cacheBuster"`.
