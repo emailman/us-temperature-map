@@ -6,6 +6,7 @@ import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.browser.window
 import kotlinx.serialization.json.Json
 
 actual fun saveCachedTemperatures(response: CachedTemperatureResponse) {}
@@ -18,7 +19,8 @@ actual suspend fun loadCachedTemperatures(): CachedTemperatureResponse? {
             }
         }
         val cacheBuster = kotlin.random.Random.nextLong()
-        val response: CachedTemperatureResponse = client.get("temperatures.json?t=$cacheBuster").body()
+        val origin = window.location.origin
+        val response: CachedTemperatureResponse = client.get("$origin/temperatures.json?t=$cacheBuster").body()
         client.close()
         response
     } catch (e: Exception) {
