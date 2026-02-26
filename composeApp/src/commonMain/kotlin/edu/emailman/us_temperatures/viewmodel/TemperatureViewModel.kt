@@ -83,6 +83,9 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
     private val _stateDetailState = MutableStateFlow<StateDetailState>(StateDetailState.Idle)
     val stateDetailState: StateFlow<StateDetailState> = _stateDetailState.asStateFlow()
 
+    private val _stateDetailLastUpdated = MutableStateFlow<String?>(null)
+    val stateDetailLastUpdated: StateFlow<String?> = _stateDetailLastUpdated.asStateFlow()
+
     init {
         viewModelScope.launch {
             cities = USCitiesData.loadCities()
@@ -228,6 +231,7 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
         _selectedCity.value = null
         _hoveredCity.value = null
         _stateDetailState.value = StateDetailState.Idle
+        _stateDetailLastUpdated.value = null
     }
 
     fun selectState(stateName: String?) {
@@ -236,6 +240,7 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
         _hoveredCity.value = null
         if (stateName == null) {
             _stateDetailState.value = StateDetailState.Idle
+            _stateDetailLastUpdated.value = null
             return
         }
         val repo = repository ?: run {
@@ -251,6 +256,7 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
             try {
                 val temps = repo.fetchCitiesParallel(cities)
                 _stateDetailState.value = StateDetailState.Success(temps)
+                _stateDetailLastUpdated.value = getCurrentTimeString()
             } catch (e: Exception) {
                 _stateDetailState.value = StateDetailState.Error(e.message ?: "Unknown error")
             }

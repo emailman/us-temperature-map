@@ -212,6 +212,15 @@ fun USMapCanvas(
                     ) {
                         Text("\u2190 All States")
                     }
+
+                    // State name label
+                    Text(
+                        text = selectedStateName ?: "",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 12.dp)
+                    )
                 }
             }
 

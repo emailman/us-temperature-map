@@ -10,6 +10,7 @@ import edu.emailman.us_temperatures.ui.components.ColorLegend
 import edu.emailman.us_temperatures.ui.components.USMapCanvas
 import edu.emailman.us_temperatures.viewmodel.DataSource
 import edu.emailman.us_temperatures.viewmodel.LoadingState
+import edu.emailman.us_temperatures.viewmodel.StateDetailState
 import edu.emailman.us_temperatures.viewmodel.TemperatureViewModel
 import edu.emailman.us_temperatures.viewmodel.ViewMode
 
@@ -28,6 +29,7 @@ fun MainScreen(viewModel: TemperatureViewModel) {
     val viewMode by viewModel.viewMode.collectAsState()
     val selectedStateName by viewModel.selectedStateName.collectAsState()
     val stateDetailState by viewModel.stateDetailState.collectAsState()
+    val stateDetailLastUpdated by viewModel.stateDetailLastUpdated.collectAsState()
 
     Scaffold(
         topBar = {
@@ -64,12 +66,19 @@ fun MainScreen(viewModel: TemperatureViewModel) {
 
                     // Refresh button (show when API key is configured or data loaded from cache)
                     if (hasApiKey != null || dataSource == DataSource.CACHE) {
+                        val isStateDetail = viewMode == ViewMode.STATE_SELECT && selectedStateName != null
                         TextButton(
                             onClick = {
-                                if (hasApiKey != null) viewModel.refreshTemperatures()
-                                else viewModel.refreshFromCache()
+                                if (isStateDetail) {
+                                    viewModel.selectState(selectedStateName)
+                                } else if (hasApiKey != null) {
+                                    viewModel.refreshTemperatures()
+                                } else {
+                                    viewModel.refreshFromCache()
+                                }
                             },
-                            enabled = loadingState !is LoadingState.Loading
+                            enabled = loadingState !is LoadingState.Loading &&
+                                stateDetailState !is StateDetailState.Loading
                         ) {
                             Text("Refresh")
                         }
@@ -114,9 +123,15 @@ fun MainScreen(viewModel: TemperatureViewModel) {
                     )
                 }
                 else -> {
-                    lastUpdated?.let {
+                    val isStateDetail = viewMode == ViewMode.STATE_SELECT && selectedStateName != null
+                    val statusText = if (isStateDetail) {
+                        stateDetailLastUpdated?.let { "Last refreshed: $it" }
+                    } else {
+                        lastUpdated?.let { "Last updated: $it" }
+                    }
+                    statusText?.let {
                         Text(
-                            text = "Last updated: $it",
+                            text = it,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
