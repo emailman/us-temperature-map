@@ -13,6 +13,7 @@ A Kotlin Multiplatform application that displays real-time temperatures for majo
 - **Precise state boundaries** rendered from GeoJSON data (48 continental states)
 - **Color-coded temperatures** with white text and colored circles (blue for cold, red for hot)
 - **5° x 5° grid overlay** with latitude/longitude labels (toggleable)
+- **State View mode** - click any state to zoom into a per-state temperature detail view with live city data
 - **Cross-platform** - runs on Desktop (JVM) and Web (Wasm/JS)
 
 ## How It Works
@@ -21,8 +22,8 @@ Temperature data is pre-fetched by a GitHub Actions cron job every 3 hours and s
 
 | Platform | Startup | Refresh Button |
 |----------|---------|----------------|
-| **Web (Vercel)** | Loads cached `temperatures.json` from CDN | Re-fetches cached file |
-| **Desktop (JVM)** | Loads cached `dist/temperatures.json` from disk | Live API fetch, saves back to cache |
+| **Web (Vercel)** | Loads cached `temperatures.json` from CDN | Re-fetches cached file (or re-fetches state cities in State View) |
+| **Desktop (JVM)** | Loads cached `dist/temperatures.json` from disk | Live API fetch, saves back to cache (or re-fetches state cities in State View) |
 | **Fallback** | If cache unavailable, prompts for API key | Progressive API loading |
 
 ## Requirements
@@ -93,6 +94,7 @@ composeApp/src/commonMain/kotlin/edu/emailman/us_temperatures/
 │   └── repository/                 # City weather data repository
 ├── domain/
 │   ├── CoordinateTransformer.kt    # Lat/lon to screen coordinates
+│   ├── PointInPolygon.kt           # Ray-casting hit test for state selection
 │   ├── StateGeometry.kt            # State boundary models
 │   ├── StatePathConverter.kt       # Convert coordinates to paths
 │   └── TemperatureColorMapper.kt   # Temperature to color mapping
@@ -112,6 +114,7 @@ composeApp/src/commonMain/kotlin/edu/emailman/us_temperatures/
 
 scripts/fetch-temperatures.js       # Node.js script for GitHub Actions
 dist/temperatures.json              # Cached temperature data (auto-generated)
+dist/composeResources/              # Bundled app resources (must stay in sync with composeResources/files/)
 .github/workflows/update-temperatures.yml  # Cron job (every 3 hours)
 ```
 

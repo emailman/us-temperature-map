@@ -21,7 +21,12 @@ A Kotlin Multiplatform application displaying real-time temperatures for major U
 - Temperature readings displayed as colored circles with white text
 - 5° x 5° grid with dashed lines and labels (toggleable)
 - Progressive loading with progress indicator (when fetching from API)
-- Refresh button (live API on JVM, re-fetches cache on web)
+- Refresh button (live API on JVM, re-fetches cache on web; re-fetches state cities when in State Detail view)
+- **State View mode**: toggle switches between full US temperature map and a clickable state overview
+  - Click any state → zoomed detail view with live temperature fetch for that state's cities
+  - State name displayed at top; "← All States" back button
+  - Shows "Last refreshed" timestamp (separate from main map cache timestamp)
+  - Web version shows "requires a live API connection" message (no API key available client-side)
 
 ### Temperature Caching System
 
@@ -37,6 +42,7 @@ A GitHub Actions cron job fetches all city temperatures every 3 hours and commit
 **Refresh behavior:**
 - **JVM** (has API key): Live API fetch for all cities, saves results back to `dist/temperatures.json`
 - **Web** (no API key): Re-fetches static `temperatures.json` from server
+- **State Detail view** (either platform): Re-fetches live city temperatures for the selected state only; shows "Last refreshed" time separate from the main cache timestamp
 
 ### Architecture
 
@@ -53,6 +59,7 @@ composeApp/src/commonMain/kotlin/edu/emailman/us_temperatures/
 │   │   ├── GeoJsonModels.kt        # GeoJSON serialization models
 │   │   ├── GeoJsonParser.kt        # Parse GeoJSON to domain models
 │   │   ├── USCitiesData.kt         # Load cities from JSON resource
+│   │   ├── USStateCitiesData.kt    # Load per-state city lists from JSON resource
 │   │   └── USStatesGeoData.kt      # Load/cache state boundaries
 │   ├── model/
 │   │   ├── CachedTemperatureResponse.kt  # Cache JSON DTOs with toTemperatureData()
@@ -62,6 +69,7 @@ composeApp/src/commonMain/kotlin/edu/emailman/us_temperatures/
 │       └── CityWeatherRepository.kt # City-based weather data fetching
 ├── domain/
 │   ├── CoordinateTransformer.kt    # Lat/lon to screen coordinates
+│   ├── PointInPolygon.kt           # Ray-casting hit test for state tap (Branch B)
 │   ├── StateGeometry.kt            # State boundary domain models
 │   ├── StatePathConverter.kt       # Convert to Compose Paths
 │   ├── TemperatureColorMapper.kt   # Temperature to color gradient
@@ -203,7 +211,9 @@ node scripts/fetch-temperatures.js
 
 - `composeResources/files/us-states.geojson` - State boundary data (~89KB)
 - `composeResources/files/us-cities.json` - City coordinates (80 cities)
+- `composeResources/files/us-state-cities.json` - Per-state city lists for State Detail view (keyed by full state name)
 - `dist/temperatures.json` - Cached temperature data (~20KB, auto-generated)
+- `dist/composeResources/` - Deployed copy of app resources (must be kept in sync with `composeResources/files/`)
 - Source: Natural Earth / PublicaMundi
 
 ## Dependencies
@@ -217,3 +227,5 @@ node scripts/fetch-temperatures.js
 
 - `kotlinx-datetime` classes throw `ClassNotFoundException` at JVM runtime; avoid using `Clock.System` or `Instant` in common code that runs on JVM. Use platform-specific time functions via expect/actual instead.
 - Ktor WasmJS HTTP client requires **absolute URLs** — relative URLs like `"temperatures.json"` silently fail (the exception is swallowed, returning `null`). Always use `window.location.origin` to build the full URL: `"${window.location.origin}/temperatures.json?t=$cacheBuster"`.
+- **`dist/composeResources` must be kept in sync** — when adding new files to `composeResources/files/`, also copy them to `dist/composeResources/us_temperatures.composeapp.generated.resources/files/`. A missing resource file causes the ViewModel init coroutine to crash silently on Vercel: the map renders but no temperatures load and no error is shown. Copy from `composeApp/build/processedResources/wasmJs/main/composeResources/...` after a build.
+- **GitHub Actions concurrent push hazard** — the cron workflow previously used `git reset --soft origin/master` which overwrote files in `dist/` pushed while the job was running. Fixed in the workflow to use `cp → hard reset → restore → commit`. See `.github/workflows/update-temperatures.yml`.
