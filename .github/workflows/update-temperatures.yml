@@ -23,13 +23,18 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Save the freshly generated file before resetting
+          cp dist/temperatures.json /tmp/temperatures_new.json
+          # Hard-reset to current remote master to avoid overwriting any
+          # files that were pushed to dist/ while this job was running
+          git fetch origin master
+          git reset --hard origin/master
+          # Restore the new temperatures
+          cp /tmp/temperatures_new.json dist/temperatures.json
           git add dist/temperatures.json
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update temperature data"
-            git fetch origin master
-            git reset --soft origin/master
             git commit -m "Update temperature data"
             git push origin HEAD:master
           fi
