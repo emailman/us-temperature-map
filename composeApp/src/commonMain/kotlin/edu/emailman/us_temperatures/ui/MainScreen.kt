@@ -11,6 +11,7 @@ import edu.emailman.us_temperatures.ui.components.USMapCanvas
 import edu.emailman.us_temperatures.viewmodel.DataSource
 import edu.emailman.us_temperatures.viewmodel.LoadingState
 import edu.emailman.us_temperatures.viewmodel.TemperatureViewModel
+import edu.emailman.us_temperatures.viewmodel.ViewMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,12 +25,30 @@ fun MainScreen(viewModel: TemperatureViewModel) {
     val hasApiKey by viewModel.apiKey.collectAsState()
     val totalCities by viewModel.totalCities.collectAsState()
     val dataSource by viewModel.dataSource.collectAsState()
+    val viewMode by viewModel.viewMode.collectAsState()
+    val selectedStateName by viewModel.selectedStateName.collectAsState()
+    val stateDetailState by viewModel.stateDetailState.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("US Temperature Map") },
                 actions = {
+                    // State View toggle
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text("State View", style = MaterialTheme.typography.bodySmall)
+                        Switch(
+                            checked = viewMode == ViewMode.STATE_SELECT,
+                            onCheckedChange = {
+                                viewModel.setViewMode(if (it) ViewMode.STATE_SELECT else ViewMode.TEMPERATURE_MAP)
+                            },
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                    }
+
                     // Grid toggle
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -117,6 +136,10 @@ fun MainScreen(viewModel: TemperatureViewModel) {
                     onCitySelected = { viewModel.selectCity(it) },
                     onCityHovered = { viewModel.hoverCity(it) },
                     showGrid = showGrid,
+                    viewMode = viewMode,
+                    selectedStateName = selectedStateName,
+                    stateDetailState = stateDetailState,
+                    onStateSelected = { viewModel.selectState(it) },
                     modifier = Modifier.weight(1f)
                 )
 

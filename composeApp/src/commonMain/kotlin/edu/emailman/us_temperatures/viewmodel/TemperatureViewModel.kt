@@ -8,6 +8,7 @@ import edu.emailman.us_temperatures.data.cache.saveCachedTemperatures
 import edu.emailman.us_temperatures.data.model.CachedTemperatureEntry
 import edu.emailman.us_temperatures.data.model.CachedTemperatureResponse
 import edu.emailman.us_temperatures.data.geo.USCitiesData
+import edu.emailman.us_temperatures.data.geo.USStateCitiesData
 import edu.emailman.us_temperatures.data.model.City
 import edu.emailman.us_temperatures.data.model.TemperatureData
 import edu.emailman.us_temperatures.data.repository.CityWeatherRepository
@@ -28,10 +29,21 @@ sealed class LoadingState {
 
 enum class DataSource { NONE, CACHE, API }
 
+enum class ViewMode { TEMPERATURE_MAP, STATE_SELECT }
+
+sealed class StateDetailState {
+    object Idle : StateDetailState()
+    object Loading : StateDetailState()
+    object NoApiKey : StateDetailState()
+    data class Success(val temperatures: List<TemperatureData>) : StateDetailState()
+    data class Error(val message: String) : StateDetailState()
+}
+
 class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
     private var api: OpenWeatherMapApi? = null
     private var repository: CityWeatherRepository? = null
     private var cities: List<City> = emptyList()
+    private var allStateCities: Map<String, List<City>> = emptyMap()
 
     private val _apiKey = MutableStateFlow(initialApiKey?.takeIf { it.isNotBlank() })
     val apiKey: StateFlow<String?> = _apiKey.asStateFlow()
@@ -62,10 +74,20 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
     private val _dataSource = MutableStateFlow(DataSource.NONE)
     val dataSource: StateFlow<DataSource> = _dataSource.asStateFlow()
 
+    private val _viewMode = MutableStateFlow(ViewMode.TEMPERATURE_MAP)
+    val viewMode: StateFlow<ViewMode> = _viewMode.asStateFlow()
+
+    private val _selectedStateName = MutableStateFlow<String?>(null)
+    val selectedStateName: StateFlow<String?> = _selectedStateName.asStateFlow()
+
+    private val _stateDetailState = MutableStateFlow<StateDetailState>(StateDetailState.Idle)
+    val stateDetailState: StateFlow<StateDetailState> = _stateDetailState.asStateFlow()
+
     init {
         viewModelScope.launch {
             cities = USCitiesData.loadCities()
             _totalCities.value = cities.size
+            allStateCities = USStateCitiesData.loadStateCities()
 
             // Try loading cached temperatures first
             val cached = try {
@@ -198,6 +220,41 @@ class TemperatureViewModel(initialApiKey: String? = null) : ViewModel() {
 
     fun toggleGrid() {
         _showGrid.value = !_showGrid.value
+    }
+
+    fun setViewMode(mode: ViewMode) {
+        _viewMode.value = mode
+        _selectedStateName.value = null
+        _selectedCity.value = null
+        _hoveredCity.value = null
+        _stateDetailState.value = StateDetailState.Idle
+    }
+
+    fun selectState(stateName: String?) {
+        _selectedStateName.value = stateName
+        _selectedCity.value = null
+        _hoveredCity.value = null
+        if (stateName == null) {
+            _stateDetailState.value = StateDetailState.Idle
+            return
+        }
+        val repo = repository ?: run {
+            _stateDetailState.value = StateDetailState.NoApiKey
+            return
+        }
+        val cities = allStateCities[stateName] ?: run {
+            _stateDetailState.value = StateDetailState.Error("No cities configured for $stateName")
+            return
+        }
+        viewModelScope.launch {
+            _stateDetailState.value = StateDetailState.Loading
+            try {
+                val temps = repo.fetchCitiesParallel(cities)
+                _stateDetailState.value = StateDetailState.Success(temps)
+            } catch (e: Exception) {
+                _stateDetailState.value = StateDetailState.Error(e.message ?: "Unknown error")
+            }
+        }
     }
 
     override fun onCleared() {
